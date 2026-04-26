@@ -1,0 +1,51 @@
+/* ═══════════════════════════════════════════════════════════
+   ArmIQ Design Tokens
+   All custom properties are scoped under :root so they're
+   globally accessible. Component-level overrides use CSS
+   Modules on top of these base tokens.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Backgrounds ────────────────────────────── */
+  --bg:         #080c10;   /* page / outermost layer       */
+  --surface-1:  #0d1117;   /* primary cards / panels       */
+  --surface-2:  #161b22;   /* elevated surface (dropdowns) */
+  --surface-3:  #1c2330;   /* tooltip / hover overlay      */
+
+  /* ── Borders ───────────────────────────────── */
+  --border:     #21262d;
+  --border-dim: #161b22;
+
+  /* ── Accent: teal (primary) ─────────────────── */
+  --teal:       #00d4c8;
+  --teal-dim:   #00a89e;
+  --teal-glow:  rgba(0, 212, 200, 0.18);
+
+  /* ── Accent: amber (secondary / warnings) ──── */
+  --amber:      #f59e0b;
+  --amber-dim:  rgba(245, 158, 11, 0.45);
+
+  /* ── Status colours ─────────────────────────── */
+  --green:      #22c55e;
+  --red:        #ef4444;
+  --blue:       #38bdf8;
+  --purple:     #a78bfa;
+
+  /* ── Text hierarchy ─────────────────────────── */
+  --text:           #e6edf3;   /* primary readable copy    */
+  --text-secondary: #8b949e;   /* labels, subheadings      */
+  --text-dim:       #484f58;   /* de-emphasised / disabled */
+
+  /* ── Typography ─────────────────────────────── */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ── Layout ─────────────────────────────────── */
+  --nav-height:  64px;
+  --stat-height: 72px;
+  --ctrl-height: 52px;
+  --sidebar-w:   280px;        /* 6-DOF left sidebar       */
+  --calc-w:      380px;        /* right calc panel         */
+  --radius:      4px;
+  --radius-lg:   8px;
+}
