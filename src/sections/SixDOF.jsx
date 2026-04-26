@@ -6,12 +6,12 @@
  *
  * How motion works (same pattern as 2-DOF / 3-DOF):
  *   • Joint sliders → drag to pose any joint → animateTo() → lerp animation
- *   • SOLVE IK button → iterative Jacobian-transpose IK → animateTo()
+ *   • SOLVE IK button → analytical solveIK6 first, iterative fallback → animateTo()
  *   • Preset switch → animateTo(homeAngles) → smooth reset to home
  *
- * IK solver: Jacobian-transpose gradient descent (position-only).
- * Universal — works for any DH parameterisation without robot-specific
- * geometric derivations. Runs in < 5ms for 100 iterations.
+ * IK solver: analytical spherical-wrist (Pieper's method) as primary solver.
+ * Falls back to Jacobian-transpose gradient descent if analytical returns null
+ * (e.g. when target is near singularity or ikConfig is unavailable).
  */
 
 import { useState, useCallback, useRef } from 'react';
@@ -23,7 +23,7 @@ import { useCanvasSize } from '../hooks/useCanvasSize.js';
 import { useAnimation } from '../hooks/useAnimation.js';
 import { forwardKinematics6 } from '../math/dh.js';
 import { computeJacobian, jacobianMetrics } from '../math/jacobian.js';
-import { normalizeAngle } from '../math/ik6.js';
+import { normalizeAngle, solveIK6, pickBestSolution } from '../math/ik6.js';
 import { PRESETS, getPreset } from '../presets/robots.js';
 import { fmtDeg, fmtMM, toRad } from '../utils/format.js';
 import styles from './Section.module.css';
@@ -76,6 +76,47 @@ function clampToLimits(angles, limits) {
   return angles.map((a, i) => Math.max(limits[i].min, Math.min(limits[i].max, a)));
 }
 
+/**
+ * Convert FK rotation matrix (column-major, as returned by forwardKinematics6)
+ * to row-major format required by solveIK6.
+ *
+ * FK R layout: [col0_r0, col0_r1, col0_r2, col1_r0, col1_r1, col1_r2, ...]
+ * solveIK6 Rd layout: [row0_c0, row0_c1, row0_c2, row1_c0, ...]
+ * Transposing column-major → row-major.
+ *
+ * @param {number[]} R - 9-element column-major rotation from FK
+ * @returns {number[]} 9-element row-major rotation for solveIK6
+ */
+function fkRtoRowMajor(R) {
+  return [
+    R[0], R[3], R[6],   // row 0: R(0,0), R(0,1), R(0,2)
+    R[1], R[4], R[7],   // row 1: R(1,0), R(1,1), R(1,2)
+    R[2], R[5], R[8],   // row 2: R(2,0), R(2,1), R(2,2)
+  ];
+}
+
+/**
+ * Build a 3×3 rotation matrix (row-major) from ZYX Euler angles.
+ * R = Rz(yaw) · Ry(pitch) · Rx(roll)
+ * Used to convert user-supplied RPY inputs into a desired orientation for IK.
+ *
+ * @param {number} roll  - Rotation about X (radians)
+ * @param {number} pitch - Rotation about Y (radians)
+ * @param {number} yaw   - Rotation about Z (radians)
+ * @returns {number[]} 9-element row-major rotation matrix
+ */
+function eulerZYXtoR(roll, pitch, yaw) {
+  const cr = Math.cos(roll),  sr = Math.sin(roll);
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const cy = Math.cos(yaw),   sy = Math.sin(yaw);
+  // R = Rz · Ry · Rx
+  return [
+    cy*cp,  cy*sp*sr - sy*cr,  cy*sp*cr + sy*sr,   // row 0
+    sy*cp,  sy*sp*sr + cy*cr,  sy*sp*cr - cy*sr,   // row 1
+   -sp,     cp*sr,             cp*cr,               // row 2
+  ];
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 export function SixDOF() {
   const [presetId, setPresetId] = useState('ur5');
@@ -91,10 +132,15 @@ export function SixDOF() {
   const { angles: rawAngles, setTarget: animateTo } = useAnimation([...preset.homeAngles]);
   const { ref: canvasRef, width: cw, height: ch } = useCanvasSize();
 
-  // Target inputs
+  // Target position inputs (mm)
   const [txInput, setTxInput] = useState('300');
   const [tyInput, setTyInput] = useState('0');
   const [tzInput, setTzInput] = useState('400');
+
+  // Target orientation inputs (degrees) — Roll/Pitch/Yaw (ZYX convention)
+  const [rxInput, setRxInput] = useState('0');
+  const [ryInput, setRyInput] = useState('0');
+  const [rzInput, setRzInput] = useState('0');
 
   // FK from current animated pose
   const { position: eePos } = forwardKinematics6(rawAngles, dhParams);
@@ -119,29 +165,61 @@ export function SixDOF() {
   }, [rawAngles, preset.limits, animateTo]);
 
   // ── SOLVE IK ────────────────────────────────────────────────────────────────
-  // Runs iterative Jacobian-transpose IK to find joint angles that reach (x,y,z).
+  // Primary: analytical solveIK6 (spherical wrist decoupling, Pieper's method).
+  // Fallback: Jacobian-transpose iterative when analytical returns null
+  // (e.g. near singularity, target out of workspace, or GENERIC preset).
   const handleSolveIK = useCallback(() => {
     const x = parseFloat(txInput);
     const y = parseFloat(tyInput);
     const z = parseFloat(tzInput);
+    const roll  = toRad(parseFloat(rxInput) || 0);
+    const pitch = toRad(parseFloat(ryInput) || 0);
+    const yaw   = toRad(parseFloat(rzInput) || 0);
     if (isNaN(x) || isNaN(y) || isNaN(z)) return;
 
     const targetPos = { x, y, z };
 
-    // Solve IK starting from current pose (warm start = faster convergence)
-    const solved = solveIKIterative(targetPos, rawAngles, dhParams);
-    const clamped = clampToLimits(solved, preset.limits);
+    // Build desired orientation matrix from RPY inputs (row-major for solveIK6).
+    // If no RPY specified (all zero), use the current FK orientation to preserve pose.
+    const isDefaultOrientation = (rxInput === '0' || rxInput === '') &&
+                                  (ryInput === '0' || ryInput === '') &&
+                                  (rzInput === '0' || rzInput === '');
+    let Rd;
+    if (isDefaultOrientation) {
+      // Preserve current end-effector orientation (FK R is column-major → transpose)
+      const { R: fkR } = forwardKinematics6(rawAngles, dhParams);
+      Rd = fkRtoRowMajor(fkR);
+    } else {
+      // Build Rd from user-supplied ZYX Euler angles
+      Rd = eulerZYXtoR(roll, pitch, yaw);
+    }
+
+    // ── 1. Try analytical solver (fast, exact for spherical-wrist robots) ──────
+    let solved = null;
+    if (preset.ikConfig) {
+      const solutions = solveIK6(targetPos, Rd, dhParams, preset.ikConfig);
+      if (solutions && solutions.length > 0) {
+        const best = pickBestSolution(solutions, rawAngles);
+        solved = clampToLimits(best, preset.limits);
+      }
+    }
+
+    // ── 2. Fallback: iterative Jacobian-transpose (works for any DH table) ────
+    if (!solved) {
+      const iterResult = solveIKIterative(targetPos, rawAngles, dhParams);
+      solved = clampToLimits(iterResult, preset.limits);
+    }
 
     // Verify solution quality (FK round-trip check)
-    const { position: fkPos } = forwardKinematics6(clamped, dhParams);
+    const { position: fkPos } = forwardKinematics6(solved, dhParams);
     const err = Math.hypot(fkPos.x - x, fkPos.y - y, fkPos.z - z);
     const ok  = err < 5.0;  // within 5mm = acceptable
 
     setReachable(ok);
     setTarget3D(targetPos);
     setSolveStatus(ok ? 'ok' : 'fail');
-    animateTo(clamped);  // ← THIS is what makes the arm move, just like 2-DOF
-  }, [txInput, tyInput, tzInput, rawAngles, dhParams, preset.limits, animateTo]);
+    animateTo(solved);  // smooth lerp to solved configuration, just like 2-DOF
+  }, [txInput, tyInput, tzInput, rxInput, ryInput, rzInput, rawAngles, dhParams, preset, animateTo]);
 
   // ── Preset switch ────────────────────────────────────────────────────────────
   const handlePresetChange = useCallback((id) => {
@@ -161,12 +239,12 @@ export function SixDOF() {
           <div className={styles.eyebrow}>SECTION 03 · SPATIAL INVERSE KINEMATICS</div>
           <div className={styles.title}>
             6-DOF Industrial Manipulator
-            <span className={styles.titleSub}>· spherical wrist · Jacobian IK</span>
+            <span className={styles.titleSub}>· spherical wrist · analytical IK</span>
           </div>
         </div>
         <div className={styles.metaRight}>
           <span>ROBOT · <span style={{ color: preset.color }}>{preset.name}</span></span>
-          <span>SOLVER · <span style={{ color: 'var(--teal)' }}>JAC-TRANSPOSE</span></span>
+          <span>SOLVER · <span style={{ color: 'var(--teal)' }}>ANALYTICAL+ITER</span></span>
           <span>TCP · <span style={{ color: 'var(--teal)' }}>
             {fmtMM(eePos.x)}, {fmtMM(eePos.y)}, {fmtMM(eePos.z)}
           </span> mm</span>
