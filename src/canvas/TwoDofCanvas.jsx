@@ -31,7 +31,7 @@ export function TwoDofCanvas({
   // Center of SVG is at origin (base joint)
   const scale = Math.min(width, height) / (2 * (L1 + L2) * 1.35);
   const ox = width / 2;
-  const oy = height / 2 + height * 0.1;  // origin slightly below center
+  const oy = height * 0.85;  // origin near bottom so arm has full upward space
 
   // Transform mm → SVG pixel coords
   const sx = (mm) => ox + mm * scale;
