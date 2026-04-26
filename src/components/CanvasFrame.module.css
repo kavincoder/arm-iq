@@ -1,0 +1,106 @@
+/* CanvasFrame.module.css — scientific instrument canvas border */
+
+.frame {
+  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  /* Glow on hover — subtle teal border intensification */
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.frame:hover {
+  border-color: rgba(0, 212, 200, 0.3);
+  box-shadow: 0 0 0 1px rgba(0, 212, 200, 0.08), inset 0 0 40px rgba(0, 212, 200, 0.02);
+}
+
+/* Dot grid background inside canvas */
+.frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.inner {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Metadata labels ── */
+.metaL,
+.metaR {
+  position: absolute;
+  top: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  z-index: 3;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.metaL { left: 24px; }
+.metaR { right: 24px; }
+
+/* ── Footer strips ── */
+.footL,
+.footR {
+  position: absolute;
+  bottom: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.footL { left: 24px; }
+.footR { right: 24px; }
+
+/* ── Corner tick marks ── */
+/* Each corner has two lines: one horizontal, one vertical */
+.tick {
+  position: absolute;
+  background: var(--teal);
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Horizontal ticks */
+.tlH, .trH, .blH, .brH {
+  width: 10px;
+  height: 1.5px;
+}
+
+/* Vertical ticks */
+.tlV, .trV, .blV, .brV {
+  width: 1.5px;
+  height: 10px;
+}
+
+/* Corner positions */
+.tlH { top: 10px; left: 10px; }
+.tlV { top: 10px; left: 10px; }
+
+.trH { top: 10px; right: 10px; }
+.trV { top: 10px; right: 10px; }
+
+.blH { bottom: 10px; left: 10px; }
+.blV { bottom: 10px; left: 10px; }
+
+.brH { bottom: 10px; right: 10px; }
+.brV { bottom: 10px; right: 10px; }
