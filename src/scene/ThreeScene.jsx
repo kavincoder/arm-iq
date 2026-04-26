@@ -59,10 +59,10 @@ export function ThreeScene({ width, height, angles = [0,0,0,0,0,0], dhParams = [
 
     // ── Camera (orthographic isometric view) ──
     const aspect = width / height;
-    const frustum = 280;
+    const initFrustum = 280;
     const camera = new THREE.OrthographicCamera(
-      -frustum * aspect, frustum * aspect,
-      frustum, -frustum,
+      -initFrustum * aspect, initFrustum * aspect,
+      initFrustum, -initFrustum,
       -2000, 2000
     );
     // Isometric angle
