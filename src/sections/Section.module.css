@@ -1,0 +1,376 @@
+/* Section.module.css — shared layout for all three DOF sections */
+
+/* ── Section wrapper ── */
+.section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Section header ── */
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 24px 0;
+  flex-shrink: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--teal-dim);
+  margin-bottom: 4px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+
+.titleSub {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+
+.metaRight {
+  display: flex;
+  gap: 24px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+/* ── Stat strip ── */
+.statStrip {
+  display: flex;
+  gap: 12px;
+  padding: 12px 24px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+/* ── Main two-column area ── */
+.mainArea {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Canvas column (left) ── */
+.canvasCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0 0 0 24px;
+}
+
+/* ── Controls bar ── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 12px;
+  flex-shrink: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  margin-top: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Slider ── */
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sliderLbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  min-width: 20px;
+}
+
+.sliderTrack {
+  position: relative;
+  width: 100px;
+  height: 4px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
+
+.sliderFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: var(--teal);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.sliderThumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--teal);
+  border: 2px solid var(--bg);
+  pointer-events: none;
+}
+
+.sliderInput {
+  position: absolute;
+  inset: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sliderVal {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 42px;
+}
+
+.sliderUnit {
+  color: var(--text-dim);
+}
+
+/* ── Coordinate input ── */
+.coordInput {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+
+.coordLbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+.coordField {
+  width: 64px;
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.coordField:focus {
+  outline: none;
+  color: var(--teal);
+}
+
+/* Remove browser number input arrows */
+.coordField::-webkit-outer-spin-button,
+.coordField::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.coordUnit {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+/* ── Toggle / mode button ── */
+.toggleBtn {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.toggleBtn:hover {
+  border-color: var(--teal-dim);
+  color: var(--teal);
+}
+
+.toggleBtn.toggleActive {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+/* ── Apply button ── */
+.applyBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  padding: 5px 14px;
+  border-radius: var(--radius);
+  background: var(--amber);
+  color: var(--bg);
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.applyBtn:hover { opacity: 0.85; }
+
+/* ── Sub text in stat card ── */
+.subText {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+/* ── 6-DOF sidebar ── */
+.sidebar {
+  width: var(--sidebar-w);
+  border-right: 1px solid var(--border);
+  background: var(--surface-1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebarSection {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebarHead {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.toggleGroup {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Joint card (6-DOF sidebar) ── */
+.jointCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.jointCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.jointLabel {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.jointVal {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+}
+
+.jointBar {
+  height: 3px;
+  background: var(--surface-1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.jointBarFill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+/* ── Preset robot buttons (6-DOF sidebar) ── */
+.presetBtn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.presetBtn:hover {
+  border-color: var(--preset-color, var(--teal));
+  background: rgba(0,0,0,0.2);
+}
+
+.presetBtn.presetActive {
+  border-color: var(--preset-color, var(--teal));
+  background: rgba(0,0,0,0.3);
+  box-shadow: inset 3px 0 0 var(--preset-color, var(--teal));
+}
+
+.presetName {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.presetMfr {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
