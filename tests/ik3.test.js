@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { solveIK3, solveFK3 } from '../src/math/ik3.js';
+import { solveIK3, solveFK3 } from '../src/math/ik3dof.js';
 
 const L1 = 90, L2 = 75, L3 = 55;
 const TOL = 0.001;

@@ -16,7 +16,7 @@ import { CalcPanel3 } from '../components/CalcPanel3.jsx';
 import { ThreeDofCanvas } from '../canvas/ThreeDofCanvas.jsx';
 import { useCanvasSize } from '../hooks/useCanvasSize.js';
 import { useAnimation } from '../hooks/useAnimation.js';
-import { solveIK3 } from '../math/ik3.js';
+import { solveIK3 } from '../math/ik3dof.js';
 import { fmtDeg, fmtMM, toRad } from '../utils/format.js';
 import styles from './Section.module.css';
 

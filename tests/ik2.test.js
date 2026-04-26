@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { solveIK2, solveFK2 } from '../src/math/ik2.js';
+import { solveIK2, solveFK2 } from '../src/math/ik2dof.js';
 
 const L1 = 100;
 const L2 = 80;

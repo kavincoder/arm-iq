@@ -6,7 +6,7 @@
  * 170° to -170° rotates -20°, not +340°).
  */
 
-import { normalizeAngle } from '../math/ik6.js';
+import { normalizeAngle } from '../math/ik6dof.js';
 
 /**
  * Lerp a scalar value toward a target.

@@ -27,7 +27,7 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { forwardKinematics6 } from '../math/dh.js';
+import { forwardKinematics6 } from '../math/fk6dof.js';
 
 const MM = 0.3;  // mm → scene units scale factor
 

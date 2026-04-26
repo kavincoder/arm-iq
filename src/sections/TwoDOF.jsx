@@ -24,7 +24,7 @@ import { CalcPanel2 } from '../components/CalcPanel2.jsx';
 import { TwoDofCanvas } from '../canvas/TwoDofCanvas.jsx';
 import { useCanvasSize } from '../hooks/useCanvasSize.js';
 import { useAnimation } from '../hooks/useAnimation.js';
-import { solveIK2 } from '../math/ik2.js';
+import { solveIK2 } from '../math/ik2dof.js';
 import { fmtDeg, fmtMM } from '../utils/format.js';
 import styles from './Section.module.css';
 

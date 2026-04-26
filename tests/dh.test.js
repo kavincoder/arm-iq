@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { dhTransform, mat4mul, mat4identity, forwardKinematics6 } from '../src/math/dh.js';
+import { dhTransform, mat4mul, mat4identity, forwardKinematics6 } from '../src/math/fk6dof.js';
 import { UR5 } from '../src/presets/robots.js';
 
 const TOL = 0.001;

@@ -18,7 +18,7 @@
  * Reference: Siciliano et al., "Robotics: Modelling, Planning and Control" Ch 2-3
  */
 
-import { dhTransform, mat4mul, mat4identity, forwardKinematics6 } from './dh.js';
+import { dhTransform, mat4mul, mat4identity, forwardKinematics6 } from './fk6dof.js';
 
 const PI = Math.PI;
 const TWO_PI = 2 * PI;

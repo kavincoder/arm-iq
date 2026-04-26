@@ -12,7 +12,7 @@
  * Returns two solutions (elbow-up and elbow-down), or null if unreachable.
  */
 
-import { solveIK2 } from './ik2.js';
+import { solveIK2 } from './ik2dof.js';
 
 /**
  * Solve 3-DOF planar IK.

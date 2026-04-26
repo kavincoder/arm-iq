@@ -17,7 +17,7 @@
  * the geometric derivation — works for any DH parameterisation).
  */
 
-import { forwardKinematics6 } from './dh.js';
+import { forwardKinematics6 } from './fk6dof.js';
 
 const DELTA = 1e-5;  // finite difference step (radians)
 

@@ -15,7 +15,7 @@
 
 import styles from './CalcPanel.module.css';
 import { fmtMM, fmtDeg, fmtRatio, fmtError } from '../utils/format.js';
-import { solveFK3 } from '../math/ik3.js';
+import { solveFK3 } from '../math/ik3dof.js';
 
 export function CalcPanel3({ L1 = 90, L2 = 75, L3 = 55, target = { x: 130, y: 70, phi: 0 }, angles = { t1: 0, t2: 0, t3: 0 }, reachable = true }) {
   const { t1, t2, t3 } = angles;
