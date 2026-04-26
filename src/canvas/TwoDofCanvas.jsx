@@ -18,6 +18,7 @@
  */
 
 import { ScopeReticle } from './ScopeReticle.jsx';
+import { useRef } from 'react';
 
 export function TwoDofCanvas({
   width = 760, height = 520,
@@ -72,15 +73,48 @@ export function TwoDofCanvas({
   const gridCols = Math.floor(width / 24) + 2;
   const gridRows = Math.floor(height / 24) + 2;
 
-  // Handle click on canvas — convert pixel → mm
+  // Track pointer-down state with a ref (avoids re-renders during drag)
+  const isDragging = useRef(false);
+
+  // Convert SVG pixel coords to arm mm coords
+  const pxToMm = (clientX, clientY, rect) => ({
+    mmX: (clientX - rect.left - ox) / scale,
+    mmY: (oy - (clientY - rect.top)) / scale,
+  });
+
+  // Handle click on canvas — convert pixel → mm and update target
   const handleClick = (e) => {
+    // Suppress click fired at end of a drag (isDragging was true during mouseup)
+    if (isDragging.current) { isDragging.current = false; return; }
     if (!onTargetClick) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-    const mmX = (px - ox) / scale;
-    const mmY = (oy - py) / scale;
+    const { mmX, mmY } = pxToMm(e.clientX, e.clientY, rect);
     onTargetClick(mmX, mmY);
+  };
+
+  // Drag handlers — mouse down starts continuous target updates
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return;   // left button only
+    isDragging.current = true;
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const { mmX, mmY } = pxToMm(e.clientX, e.clientY, rect);
+    if (onTargetClick) onTargetClick(mmX, mmY);
+
+    const onMove = (ev) => {
+      if (!isDragging.current) return;
+      const { mmX: mx, mmY: my } = pxToMm(ev.clientX, ev.clientY, rect);
+      if (onTargetClick) onTargetClick(mx, my);
+    };
+
+    const onUp = () => {
+      isDragging.current = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   };
 
   // Arc path for joint angle indicator
@@ -96,7 +130,8 @@ export function TwoDofCanvas({
     <svg
       width={width} height={height}
       viewBox={`0 0 ${width} ${height}`}
-      style={{ display: 'block', cursor: 'crosshair' }}
+      style={{ display: 'block', cursor: isDragging.current ? 'crosshair' : 'crosshair' }}
+      onMouseDown={handleMouseDown}
       onClick={handleClick}
     >
       <defs>
