@@ -362,7 +362,7 @@ export function SixDOF() {
             })}
           </div>
 
-          {/* Target position IK */}
+          {/* Target position + orientation IK */}
           <div className={styles.sidebarSection}>
             <div className={styles.sidebarHead}>TARGET POSITION · IK SOLVE</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -370,6 +370,28 @@ export function SixDOF() {
               <SideInput label="Y" value={tyInput} onChange={setTyInput} unit="mm"/>
               <SideInput label="Z" value={tzInput} onChange={setTzInput} unit="mm"/>
             </div>
+
+            {/* Roll / Pitch / Yaw orientation inputs */}
+            <div style={{
+              marginTop: 8,
+              fontFamily: 'var(--font-mono)', fontSize: 9,
+              color: 'var(--text-secondary)', letterSpacing: '0.08em',
+              marginBottom: 4,
+            }}>
+              TARGET ORIENTATION (ZYX EULER)
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <SideInput label="Roll"  value={rxInput} onChange={setRxInput} unit="°"/>
+              <SideInput label="Pitch" value={ryInput} onChange={setRyInput} unit="°"/>
+              <SideInput label="Yaw"   value={rzInput} onChange={setRzInput} unit="°"/>
+            </div>
+            <div style={{
+              marginTop: 4, fontFamily: 'var(--font-mono)', fontSize: 8,
+              color: 'var(--text-dim)', lineHeight: '14px',
+            }}>
+              Leave at 0 to preserve current orientation.
+            </div>
+
             <button
               className={styles.applyBtn}
               style={{ marginTop: 10, width: '100%', justifyContent: 'center' }}
