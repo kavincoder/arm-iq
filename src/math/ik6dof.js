@@ -1,5 +1,5 @@
 /**
- * ik6.js — 6-DOF Analytical Inverse Kinematics (Spherical Wrist)
+ * ik6dof.js — 6-DOF Analytical Inverse Kinematics (Spherical Wrist)
  *
  * Method: Spherical wrist decoupling (Pieper's method)
  *
@@ -15,10 +15,47 @@
  *
  * Up to 8 solutions are returned; the caller picks the closest to current pose.
  *
+ * No import statements — DH math is inlined below as local functions.
+ *
  * Reference: Siciliano et al., "Robotics: Modelling, Planning and Control" Ch 2-3
  */
 
-import { dhTransform, mat4mul, mat4identity, forwardKinematics6 } from './fk6dof.js';
+// ── Inlined DH math (from fk6dof.js) ─────────────────────────────────────────
+// Avoids import dependency while keeping this file pure (no imports).
+
+/** Multiply two 4×4 column-major matrices. */
+function mat4mul(A, B) {
+  const C = new Array(16).fill(0);
+  for (let col = 0; col < 4; col++) {
+    for (let row = 0; row < 4; row++) {
+      let sum = 0;
+      for (let k = 0; k < 4; k++) sum += A[k * 4 + row] * B[col * 4 + k];
+      C[col * 4 + row] = sum;
+    }
+  }
+  return C;
+}
+
+/** Identity 4×4 matrix (column-major). */
+function mat4identity() {
+  return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+}
+
+/**
+ * Standard DH transform Tᵢ₋₁ᵢ = Rotz(θ)·Tz(d)·Tx(a)·Rotx(α).
+ * Returns 4×4 column-major homogeneous matrix.
+ */
+function dhTransform(theta, d, a, alpha) {
+  const ct = Math.cos(theta), st = Math.sin(theta);
+  const ca = Math.cos(alpha), sa = Math.sin(alpha);
+  // prettier-ignore
+  return [
+    ct,      st,      0,  0,
+   -st*ca,  ct*ca,  sa,  0,
+    st*sa, -ct*sa,  ca,  0,
+    a*ct,   a*st,    d,  1,
+  ];
+}
 
 const PI = Math.PI;
 const TWO_PI = 2 * PI;

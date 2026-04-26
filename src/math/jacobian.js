@@ -2,22 +2,57 @@
  * jacobian.js — Numerical Jacobian for 6-DOF robots
  *
  * NOTE: The Jacobian is used for EDUCATIONAL DISPLAY only in ArmIQ.
- * The actual IK solver (ik6.js) uses closed-form analytical solution.
+ * The actual IK solver (ik6dof.js) uses closed-form analytical solution.
  *
  * The 6×6 geometric Jacobian J(q) relates joint velocities q̇ to
  * end-effector velocity Ẋ:
  *
  *   Ẋ = J(q) · q̇
  *
- * Structure:
- *   J = [ Jv ]   — rows 0..2: linear velocity (Jv = zᵢ₋₁ × (pe − pᵢ₋₁))
- *       [ Jω ]   — rows 3..5: angular velocity (Jω = zᵢ₋₁ for revolute joints)
+ * Computed via finite differences on the FK function.
  *
- * Computed via finite differences on the FK function (more general than
- * the geometric derivation — works for any DH parameterisation).
+ * No import statements — FK math is inlined below as local functions.
  */
 
-import { forwardKinematics6 } from './fk6dof.js';
+// ── Inlined DH/FK math (from fk6dof.js) ──────────────────────────────────────
+
+function mat4mul(A, B) {
+  const C = new Array(16).fill(0);
+  for (let col = 0; col < 4; col++) {
+    for (let row = 0; row < 4; row++) {
+      let sum = 0;
+      for (let k = 0; k < 4; k++) sum += A[k*4+row] * B[col*4+k];
+      C[col*4+row] = sum;
+    }
+  }
+  return C;
+}
+
+function mat4identity() { return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]; }
+
+function dhTransform(theta, d, a, alpha) {
+  const ct = Math.cos(theta), st = Math.sin(theta);
+  const ca = Math.cos(alpha), sa = Math.sin(alpha);
+  // prettier-ignore
+  return [ct, st, 0, 0, -st*ca, ct*ca, sa, 0, st*sa, -ct*sa, ca, 0, a*ct, a*st, d, 1];
+}
+
+/**
+ * Compute T₀⁶ forward kinematics for a 6-DOF robot.
+ * @param {number[]} angles   - [θ1…θ6] in radians
+ * @param {object[]} dhParams - DH table (6 entries with a, d, alpha, thetaOffset)
+ * @returns {{ position: {x,y,z}, R: number[] }}
+ */
+function forwardKinematics6(angles, dhParams) {
+  let T = mat4identity();
+  for (let i = 0; i < 6; i++) {
+    const { a, d, alpha, thetaOffset } = dhParams[i];
+    T = mat4mul(T, dhTransform(angles[i] + thetaOffset, d, a, alpha));
+  }
+  const position = { x: T[12], y: T[13], z: T[14] };
+  const R = [T[0],T[1],T[2], T[4],T[5],T[6], T[8],T[9],T[10]];
+  return { position, R };
+}
 
 const DELTA = 1e-5;  // finite difference step (radians)
 
