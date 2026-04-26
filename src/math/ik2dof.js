@@ -52,35 +52,6 @@ export function solveIK2(x, y, L1, L2) {
   });
 }
 
-/**
- * Forward kinematics check for 2-DOF.
- * Computes end-effector position from joint angles.
- * Used to verify IK solution accuracy: FK(IK(target)) ≈ target.
- *
- * @param {number} t1 - Joint 1 angle (radians)
- * @param {number} t2 - Joint 2 angle (radians)
- * @param {number} L1 - Link 1 length (mm)
- * @param {number} L2 - Link 2 length (mm)
- * @returns {{ x: number, y: number }} End-effector position
- */
-export function solveFK2(t1, t2, L1, L2) {
-  const elbowX = L1 * Math.cos(t1);
-  const elbowY = L1 * Math.sin(t1);
-  const tipX   = elbowX + L2 * Math.cos(t1 + t2);
-  const tipY   = elbowY + L2 * Math.sin(t1 + t2);
-  return { x: tipX, y: tipY };
-}
-
-/**
- * Compute elbow joint position in workspace frame.
- *
- * @param {number} t1 - Joint 1 angle (radians)
- * @param {number} L1 - Link 1 length (mm)
- * @returns {{ x: number, y: number }} Elbow position
- */
-export function elbowPos2(t1, L1) {
-  return {
-    x: L1 * Math.cos(t1),
-    y: L1 * Math.sin(t1),
-  };
-}
+// FK functions live in fk2dof.js — re-exported here for backward compatibility
+// so existing imports of { solveFK2 } from 'ik2dof.js' continue to work.
+export { solveFK2, elbowPos2 } from './fk2dof.js';
