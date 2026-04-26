@@ -125,13 +125,15 @@ export function ThreeScene({ width, height, angles = [0,0,0,0,0,0], dhParams = [
     scene.add(armGroup);
     armRef.current = armGroup;
 
-    // ── Manual orbit (drag to rotate) ──
-    let isDown = false, lastX = 0, lastY = 0;
+    // ── Manual orbit: rotate (left drag), pan (right drag), zoom (wheel) ──
+    let isDown = false, isPan = false, lastX = 0, lastY = 0;
     let azimuth = Math.PI / 4, polar = Math.PI / 4;
+    let frustum = 280;   // orthographic frustum half-height (zoom proxy)
 
     const camRadius = Math.sqrt(200**2 + 180**2 + 200**2);
     const camTarget = new THREE.Vector3(0, 60, 0);
 
+    // Apply current orbit state to the camera
     const updateCamera = () => {
       camera.position.set(
         camTarget.x + camRadius * Math.sin(polar) * Math.sin(azimuth),
@@ -139,17 +141,65 @@ export function ThreeScene({ width, height, angles = [0,0,0,0,0,0], dhParams = [
         camTarget.z + camRadius * Math.sin(polar) * Math.cos(azimuth),
       );
       camera.lookAt(camTarget);
+
+      // Update orthographic projection for zoom
+      const aspect = camera.right / camera.top;  // current aspect
+      camera.top    =  frustum;
+      camera.bottom = -frustum;
+      camera.left   = -frustum * aspect;
+      camera.right  =  frustum * aspect;
+      camera.updateProjectionMatrix();
     };
 
-    el.addEventListener('mousedown', (e) => { isDown = true; lastX = e.clientX; lastY = e.clientY; });
-    el.addEventListener('mousemove', (e) => {
-      if (!isDown) return;
-      azimuth -= (e.clientX - lastX) * 0.006;
-      polar    = Math.max(0.1, Math.min(Math.PI - 0.1, polar + (e.clientY - lastY) * 0.006));
-      lastX = e.clientX; lastY = e.clientY;
-      updateCamera();
+    // ── Left-button drag → rotate ──
+    el.addEventListener('mousedown', (e) => {
+      if (e.button === 0) { isDown = true; lastX = e.clientX; lastY = e.clientY; }
+      if (e.button === 2) { isPan  = true; lastX = e.clientX; lastY = e.clientY; }
     });
-    el.addEventListener('mouseup', () => { isDown = false; });
+
+    el.addEventListener('mousemove', (e) => {
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+
+      if (isDown) {
+        // Orbit rotate
+        azimuth -= dx * 0.006;
+        polar    = Math.max(0.1, Math.min(Math.PI - 0.1, polar + dy * 0.006));
+        updateCamera();
+      }
+
+      if (isPan) {
+        // Pan: move camTarget in the camera's local right/up plane
+        // Right vector = cross(camDir, worldUp)
+        const camDir = new THREE.Vector3()
+          .subVectors(camTarget, camera.position).normalize();
+        const worldUp = new THREE.Vector3(0, 1, 0);
+        const right   = new THREE.Vector3().crossVectors(camDir, worldUp).normalize();
+        const up      = new THREE.Vector3().crossVectors(right, camDir).normalize();
+
+        // Scale pan speed with frustum size so it feels consistent at any zoom
+        const panSpeed = frustum * 0.002;
+        camTarget.addScaledVector(right, -dx * panSpeed);
+        camTarget.addScaledVector(up,     dy * panSpeed);
+        updateCamera();
+      }
+
+      lastX = e.clientX; lastY = e.clientY;
+    });
+
+    el.addEventListener('mouseup',   (e) => { if (e.button === 0) isDown = false; if (e.button === 2) isPan = false; });
+    el.addEventListener('mouseleave', ()  => { isDown = false; isPan = false; });
+
+    // ── Prevent context menu on right-click ──
+    el.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // ── Wheel → zoom (change frustum size) ──
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;  // scroll down = zoom out
+      frustum = Math.max(40, Math.min(800, frustum * zoomFactor));
+      updateCamera();
+    }, { passive: false });
 
     // ── Render loop ──
     let rafId;
