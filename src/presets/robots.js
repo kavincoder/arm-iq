@@ -29,19 +29,19 @@ export const UR5 = {
   dh: [
     { index: 1, a:     0, d:  89.159, alpha:  PI / 2, thetaOffset: 0 },
     { index: 2, a: -425.0, d:   0,    alpha:  0,      thetaOffset: 0 },
-    { index: 3, a: -392.25, d:  0,    alpha:  0,      thetaOffset: 0 },
+    { index: 3, a: -392.2, d:  0,    alpha:  0,      thetaOffset: 0 },
     { index: 4, a:     0, d: 109.15,  alpha:  PI / 2, thetaOffset: 0 },
     { index: 5, a:     0, d:  94.65,  alpha: -PI / 2, thetaOffset: 0 },
-    { index: 6, a:     0, d:  82.5,   alpha:  0,      thetaOffset: 0 },
+    { index: 6, a:     0, d:  82.3,   alpha:  0,      thetaOffset: 0 },
   ],
 
   // Geometric config for IK solver (extracted from DH)
   ikConfig: {
     d1:  89.159,   // z-offset of joint 1
     a2: -425.0,    // link 2 length
-    a3: -392.25,   // link 3 length
+    a3: -392.2,    // link 3 length (0.3922 m per UR5 spec)
     d4:  109.15,   // wrist offset
-    d6:  82.5,     // tool flange offset
+    d6:  82.3,     // tool flange offset (0.0823 m per UR5 spec)
   },
 
   // Joint limits [min, max] in radians
