@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [react()],
   base: '/arm-iq/',
   test: {
-    // Vitest config — uses jsdom so DOM APIs are available in math tests
-    environment: 'jsdom',
+    // Vitest config — node environment for pure math tests (no DOM needed)
+    environment: 'node',
     globals: true,
   },
 })
