@@ -325,6 +325,7 @@
 
 .jointBar {
   height: 3px;
+  width: 100%;
   background: var(--surface-1);
   border-radius: 2px;
   overflow: hidden;
@@ -335,6 +336,25 @@
   background: var(--teal);
   border-radius: 2px;
   transition: width 0.1s linear;
+}
+
+/* Wrapper that stacks the visual bar and the invisible range input */
+.jointBarWrap {
+  position: relative;
+  height: 14px;
+  display: flex;
+  align-items: center;
+}
+
+/* Invisible range input sits over the bar — handles all drag interaction */
+.jointSliderInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: ew-resize;
+  margin: 0;
 }
 
 /* ── Preset robot buttons (6-DOF sidebar) ── */
