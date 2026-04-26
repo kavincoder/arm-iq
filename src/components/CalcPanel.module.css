@@ -1,0 +1,201 @@
+/* CalcPanel.module.css — shared styles for all three calc panels */
+
+.panel {
+  width: var(--calc-w);
+  background: var(--surface-1);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* ── Header ── */
+.head {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.head h2 {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  letter-spacing: 0.06em;
+  margin: 0 0 3px;
+}
+
+.sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
+
+/* ── Sub-panels ── */
+.subpanel {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 18px;
+  flex-shrink: 0;
+}
+
+.subpanel.flex1 {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* ── Pill labels ── */
+.pill {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 2px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.pill.live {
+  background: rgba(0, 212, 200, 0.08);
+  color: var(--teal);
+  border-color: rgba(0, 212, 200, 0.2);
+}
+
+/* ── Step-by-step derivation ── */
+.derivation {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hint {
+  color: var(--text-dim);
+}
+
+/* ── Live equations block ── */
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+/* ── Equation rows ── */
+.eqRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 18px;
+  color: var(--text-secondary);
+}
+
+.eqLbl {
+  min-width: 64px;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.eqLbl.header {
+  color: var(--text-secondary);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.val {
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  color: var(--text-dim);
+  font-size: 9px;
+}
+
+.inlineLbl {
+  color: var(--text-secondary);
+  font-size: 10px;
+  margin-left: 8px;
+}
+
+/* ── DH table ── */
+.dhTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.dhTable th {
+  text-align: center;
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 9px;
+}
+
+.dhTable th:first-child { text-align: left; }
+
+.dhTable td {
+  text-align: center;
+  padding: 3px 6px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid rgba(33,38,45,0.5);
+}
+
+.dhTable td:first-child { text-align: left; color: var(--text-secondary); }
+.dhTable td.theta { color: var(--teal); }
+.dhTable td.zero { color: var(--text-dim); }
+
+/* ── Jacobian table ── */
+.jacTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+}
+
+.jacTable th {
+  text-align: center;
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 9px;
+  padding: 3px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.jacTable td {
+  text-align: right;
+  padding: 2px 4px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-size: 9px;
+}
+
+.jacTable td:first-child { text-align: left; }
+.jacTable td.zero { color: var(--text-dim); }
