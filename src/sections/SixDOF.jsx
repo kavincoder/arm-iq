@@ -126,8 +126,24 @@ export function SixDOF() {
   const [target3D, setTarget3D] = useState(null);   // { x, y, z } mm for marker
   const [solveStatus, setSolveStatus] = useState('idle');  // 'idle' | 'ok' | 'fail'
 
-  const preset   = getPreset(presetId);
-  const dhParams = preset.dh;
+  const preset = getPreset(presetId);
+
+  // Custom DH parameters for GENERIC mode — starts as deep copy of GENERIC preset
+  const [customDH, setCustomDH] = useState(() =>
+    getPreset('generic').dh.map(row => ({ ...row }))
+  );
+
+  // In GENERIC mode the user edits customDH; in PRESET mode use the preset's table.
+  const dhParams = sideMode === 'generic' ? customDH : preset.dh;
+
+  // Update one field of one joint's DH row (used by DHSliders)
+  const handleDHChange = useCallback((jointIdx, field, value) => {
+    setCustomDH(prev => {
+      const next = prev.map(row => ({ ...row }));
+      next[jointIdx] = { ...next[jointIdx], [field]: value };
+      return next;
+    });
+  }, []);
 
   const { angles: rawAngles, setTarget: animateTo } = useAnimation([...preset.homeAngles]);
   const { ref: canvasRef, width: cw, height: ch } = useCanvasSize();
@@ -298,6 +314,14 @@ export function SixDOF() {
               <SideToggle active={metallic}  onClick={() => setMetallic(true)}>METALLIC</SideToggle>
             </div>
           </div>
+
+          {/* Generic DH parameter sliders */}
+          {sideMode === 'generic' && (
+            <div className={styles.sidebarSection}>
+              <div className={styles.sidebarHead}>DH PARAMETERS · EDIT FREELY</div>
+              <DHSliders dh={customDH} onChange={handleDHChange} />
+            </div>
+          )}
 
           {/* Robot preset selector */}
           {sideMode === 'preset' && (
@@ -495,6 +519,117 @@ function SideInput({ label, value, onChange, unit = 'mm' }) {
         step="1"
       />
       <span className={styles.coordUnit}>{unit}</span>
+    </div>
+  );
+}
+
+// ── DHSliders ─────────────────────────────────────────────────────────────────
+// Renders one row per joint with sliders for a, d, alpha, thetaOffset.
+// Only shown when sideMode === 'generic'. Changes update customDH state in SixDOF.
+
+function DHSliders({ dh, onChange }) {
+  const PI = Math.PI;
+  const toDeg = (r) => (r * 180 / Math.PI).toFixed(1);
+  const toRad = (d) => d * Math.PI / 180;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {dh.map((row, i) => (
+        <div key={i} style={{
+          background: 'var(--surface-1)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          padding: '8px 10px',
+        }}>
+          {/* Joint label */}
+          <div style={{
+            fontFamily: 'var(--font-mono)', fontSize: 9,
+            color: 'var(--teal-dim)', letterSpacing: '0.1em', marginBottom: 6,
+          }}>
+            JOINT {i + 1}
+          </div>
+
+          {/* a — link length */}
+          <DHParam
+            label="a"
+            unit="mm"
+            value={row.a}
+            min={-500} max={500} step={5}
+            onChange={v => onChange(i, 'a', v)}
+          />
+
+          {/* d — link offset */}
+          <DHParam
+            label="d"
+            unit="mm"
+            value={row.d}
+            min={-500} max={500} step={5}
+            onChange={v => onChange(i, 'd', v)}
+          />
+
+          {/* alpha — twist angle (display in °, store in rad) */}
+          <DHParam
+            label="α"
+            unit="°"
+            value={parseFloat(toDeg(row.alpha))}
+            min={-180} max={180} step={5}
+            onChange={v => onChange(i, 'alpha', toRad(v))}
+          />
+
+          {/* thetaOffset — joint zero offset (display in °, store in rad) */}
+          <DHParam
+            label="θ₀"
+            unit="°"
+            value={parseFloat(toDeg(row.thetaOffset))}
+            min={-180} max={180} step={5}
+            onChange={v => onChange(i, 'thetaOffset', toRad(v))}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DHParam({ label, unit, value, min, max, step, onChange }) {
+  const pct = ((value - min) / (max - min)) * 100;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+      <span style={{
+        fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-dim)',
+        minWidth: 16, textAlign: 'right',
+      }}>{label}</span>
+
+      {/* Visual track + invisible range input */}
+      <div style={{ position: 'relative', flex: 1, height: 14, display: 'flex', alignItems: 'center' }}>
+        <div style={{
+          width: '100%', height: 3,
+          background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 2,
+        }}>
+          <div style={{
+            width: `${Math.max(0, Math.min(100, pct))}%`,
+            height: '100%', background: 'var(--teal)', borderRadius: 2,
+          }} />
+        </div>
+        <input
+          type="range"
+          min={min} max={max} step={step}
+          value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            opacity: 0, cursor: 'ew-resize', margin: 0,
+          }}
+        />
+      </div>
+
+      {/* Numeric value display */}
+      <span style={{
+        fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text)',
+        minWidth: 40, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
+      }}>
+        {Number.isInteger(value) ? value : value.toFixed(1)}
+        <span style={{ color: 'var(--text-dim)', marginLeft: 2 }}>{unit}</span>
+      </span>
     </div>
   );
 }
