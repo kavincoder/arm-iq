@@ -47,7 +47,7 @@ export function ThreeScene({ width, height, angles = [0,0,0,0,0,0], dhParams = [
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;  // PCFSoft is deprecated in r184+
     renderer.setClearColor(0x080c10, 1);
     el.appendChild(renderer.domElement);
     rendererRef.current = renderer;
