@@ -45,7 +45,7 @@ export function ThreeDofCanvas({
   const tip = { x: j2.x + L3 * Math.cos(t1 + t2 + t3), y: j2.y + L3 * Math.sin(t1 + t2 + t3) };
 
   const outerR = (L1 + L2 + L3) * scale;
-  const innerR = Math.max(0, Math.abs(L1 - L2) - L3) * scale;
+  const innerR = Math.abs(L1 - L2) * scale;  // inner dead zone depends only on L1, L2
 
   // Phi handle position (36px from target along orientation direction)
   const phiHandleDist = 36;
