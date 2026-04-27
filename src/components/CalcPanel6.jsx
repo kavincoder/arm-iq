@@ -18,9 +18,9 @@
  */
 
 import styles from './CalcPanel.module.css';
-import { fmtDeg, fmtMM } from '../utils/format.js';
+import { fmtDeg, fmtMM, fmtRatio } from '../utils/format.js';
 
-export function CalcPanel6({ dhParams = [], angles = [0,0,0,0,0,0], jacobian = null, metrics = null, presetName = 'UR5' }) {
+export function CalcPanel6({ dhParams = [], angles = [0,0,0,0,0,0], jacobian = null, metrics = null, presetName = 'UR5', ikSteps = null }) {
   const ROW_LABELS = ['x', 'y', 'z', 'ωx', 'ωy', 'ωz'];
   const ROW_COLORS = ['#ef4444', '#22c55e', '#3b82f6', '#8b949e', '#8b949e', '#8b949e'];
 
@@ -72,6 +72,62 @@ export function CalcPanel6({ dhParams = [], angles = [0,0,0,0,0,0], jacobian = n
           <Step n="02">T₀⁶ = T₀¹·T₁²·T₂³·T₃⁴·T₄⁵·T₅⁶</Step>
           <Step n="03">p = T₀⁶[0:3, 3] &nbsp; R = T₀⁶[0:3, 0:3]</Step>
         </div>
+      </div>
+
+      {/* ── IK Breakdown ── */}
+      <div className={styles.subpanel}>
+        <div className={styles.subhead}>
+          <span>IK SOLUTION · STEP BY STEP</span>
+          {ikSteps
+            ? <span className={`${styles.pill} ${styles.live}`}>▶ PIEPER</span>
+            : <span className={styles.pill}>SOLVE IK FIRST</span>}
+        </div>
+
+        {ikSteps ? (
+          <div className={styles.ikBreakdown}>
+
+            {/* Step 1 — Wrist Centre */}
+            <IKGroup n="01" label="WRIST CENTRE  Pc = Pe − d6·R·ẑ">
+              <IKRow lbl="Pc.x" val={fmtMM(ikSteps.wristCentre.x)} unit="mm"/>
+              <IKRow lbl="Pc.y" val={fmtMM(ikSteps.wristCentre.y)} unit="mm"/>
+              <IKRow lbl="Pc.z" val={fmtMM(ikSteps.wristCentre.z)} unit="mm"/>
+            </IKGroup>
+
+            {/* Step 2 — θ₁ */}
+            <IKGroup n="02" label="SHOULDER  θ₁ = atan2(wcy, wcx)">
+              <IKRow lbl="θ₁" val={fmtDeg(ikSteps.theta1)} unit="°"/>
+            </IKGroup>
+
+            {/* Step 3 — Planar geometry */}
+            <IKGroup n="03" label="PLANAR GEOMETRY  law of cosines">
+              <IKRow lbl="r"      val={fmtMM(ikSteps.r)}   unit="mm" tip="radial dist"/>
+              <IKRow lbl="s"      val={fmtMM(ikSteps.s)}   unit="mm" tip="axial height"/>
+              <IKRow lbl="‖Pc‖"  val={fmtMM(ikSteps.r2)}  unit="mm" tip="shoulder→wrist"/>
+              <IKRow lbl="L₁"    val={fmtMM(ikSteps.L1)}  unit="mm" tip="|a₂|"/>
+              <IKRow lbl="L₂"    val={fmtMM(ikSteps.L2)}  unit="mm" tip="√(a₃²+d₄²)"/>
+              <IKRow lbl="cos θ₃" val={fmtRatio(ikSteps.cosT3)} unit="" tip="law of cosines"/>
+            </IKGroup>
+
+            {/* Step 4 — Elbow angles */}
+            <IKGroup n="04" label="ELBOW ANGLES">
+              <IKRow lbl="γ"  val={fmtDeg(ikSteps.gamma)}  unit="°" tip="atan2(d₄,a₃)"/>
+              <IKRow lbl="θ₃" val={fmtDeg(ikSteps.theta3)} unit="°"/>
+              <IKRow lbl="θ₂" val={fmtDeg(ikSteps.theta2)} unit="°"/>
+            </IKGroup>
+
+            {/* Step 5 — Wrist orientation */}
+            <IKGroup n="05" label="WRIST  R₃⁶ = R₀³ᵀ · R₀⁶">
+              <IKRow lbl="θ₄" val={fmtDeg(ikSteps.theta4)} unit="°"/>
+              <IKRow lbl="θ₅" val={fmtDeg(ikSteps.theta5)} unit="°" tip="sin≠0 → ZYZ"/>
+              <IKRow lbl="θ₆" val={fmtDeg(ikSteps.theta6)} unit="°"/>
+            </IKGroup>
+
+          </div>
+        ) : (
+          <div style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: 10, padding: '6px 0' }}>
+            Press SOLVE IK to see Pieper's method step by step
+          </div>
+        )}
       </div>
 
       {/* ── Jacobian ── */}
@@ -134,6 +190,45 @@ function Step({ n, children }) {
     <div style={{ display: 'flex', gap: 10, padding: '4px 0', fontSize: 11, lineHeight: 1.5 }}>
       <span style={{ color: 'var(--teal-dim)', fontFamily: 'var(--font-mono)', fontSize: 9, minWidth: 18, paddingTop: 2 }}>{n}</span>
       <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{children}</span>
+    </div>
+  );
+}
+
+// ── IK Breakdown sub-components ───────────────────────────────────────────────
+
+function IKGroup({ n, label, children }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3,
+      }}>
+        <span style={{
+          fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--teal)',
+          background: 'rgba(0,212,200,0.1)', border: '1px solid rgba(0,212,200,0.2)',
+          borderRadius: 2, padding: '1px 5px', flexShrink: 0,
+        }}>{n}</span>
+        <span style={{
+          fontFamily: 'var(--font-mono)', fontSize: 8,
+          color: 'var(--text-dim)', letterSpacing: '0.08em',
+        }}>{label}</span>
+      </div>
+      <div style={{ paddingLeft: 6, borderLeft: '1px solid var(--border)' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function IKRow({ lbl, val, unit, tip }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'baseline', gap: 4,
+      fontFamily: 'var(--font-mono)', fontSize: 10, lineHeight: '17px',
+    }}>
+      <span style={{ minWidth: 46, color: 'var(--text-secondary)', fontSize: 9 }}>{lbl}</span>
+      <span style={{ color: 'var(--teal)', fontVariantNumeric: 'tabular-nums' }}>{val}</span>
+      {unit && <span style={{ color: 'var(--text-dim)', fontSize: 8 }}>{unit}</span>}
+      {tip  && <span style={{ color: 'var(--text-dim)', fontSize: 8, marginLeft: 4 }}>// {tip}</span>}
     </div>
   );
 }

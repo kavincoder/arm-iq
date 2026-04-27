@@ -23,53 +23,14 @@ import { useCanvasSize } from '../hooks/useCanvasSize.js';
 import { useAnimation } from '../hooks/useAnimation.js';
 import { forwardKinematics6 } from '../math/fk6dof.js';
 import { computeJacobian, jacobianMetrics } from '../math/jacobian.js';
-import { normalizeAngle, solveIK6, pickBestSolution } from '../math/ik6dof.js';
+import { normalizeAngle, solveIK6, solveIK6Steps, pickBestSolution } from '../math/ik6dof.js';
+import { solveIKIterative } from '../math/ikIterative.js';
 import { PRESETS, getPreset } from '../presets/robots.js';
 import { fmtDeg, fmtMM, toRad } from '../utils/format.js';
 import styles from './Section.module.css';
 
 const JOINT_LABELS = ['θ₁', 'θ₂', 'θ₃', 'θ₄', 'θ₅', 'θ₆'];
 
-// ── Jacobian-transpose iterative IK (position only) ───────────────────────────
-// Finds joint angles so TCP reaches targetPos within tolerance.
-// Stops after maxIter or when error < eps mm.
-// Works for any 6-DOF robot — no robot-specific geometric derivation needed.
-function solveIKIterative(targetPos, initialAngles, dhParams, {
-  maxIter = 120,
-  stepSize = 0.8,
-  eps = 0.5,
-} = {}) {
-  let q = [...initialAngles];
-
-  for (let iter = 0; iter < maxIter; iter++) {
-    const { position: p } = forwardKinematics6(q, dhParams);
-    const ex = targetPos.x - p.x;
-    const ey = targetPos.y - p.y;
-    const ez = targetPos.z - p.z;
-    const errMag = Math.sqrt(ex*ex + ey*ey + ez*ez);
-    if (errMag < eps) break;
-
-    // Compute 3×6 position Jacobian via finite differences
-    const h = 1e-4;  // radians
-    const dq = new Array(6).fill(0);
-
-    for (let i = 0; i < 6; i++) {
-      const qp = [...q]; qp[i] += h;
-      const pp = forwardKinematics6(qp, dhParams).position;
-      // Jᵀ * err update: dqᵢ += (∂p/∂qᵢ) · err
-      dq[i] = ((pp.x - p.x) * ex + (pp.y - p.y) * ey + (pp.z - p.z) * ez) / h;
-    }
-
-    // Adaptive step: scale down if errMag is already small
-    const scale = stepSize * Math.min(1, errMag / 50);
-    for (let i = 0; i < 6; i++) {
-      q[i] += scale * dq[i];
-      q[i] = normalizeAngle(q[i]);
-    }
-  }
-
-  return q;
-}
 
 // Clamp angles to joint limits
 function clampToLimits(angles, limits) {
@@ -125,6 +86,7 @@ export function SixDOF() {
   const [reachable, setReachable] = useState(true);
   const [target3D, setTarget3D] = useState(null);   // { x, y, z } mm for marker
   const [solveStatus, setSolveStatus] = useState('idle');  // 'idle' | 'ok' | 'fail'
+  const [ikSteps, setIkSteps] = useState(null);           // step-by-step IK breakdown
 
   const preset = getPreset(presetId);
 
@@ -213,17 +175,18 @@ export function SixDOF() {
     // ── 1. Try analytical solver (fast, exact for spherical-wrist robots) ──────
     let solved = null;
     if (preset.ikConfig) {
-      const solutions = solveIK6(targetPos, Rd, dhParams, preset.ikConfig);
+      const { solutions, steps } = solveIK6Steps(targetPos, Rd, dhParams, preset.ikConfig);
       if (solutions && solutions.length > 0) {
         const best = pickBestSolution(solutions, rawAngles);
         solved = clampToLimits(best, preset.limits);
+        setIkSteps(steps);   // store breakdown for display
       }
     }
 
     // ── 2. Fallback: iterative Jacobian-transpose (works for any DH table) ────
     if (!solved) {
-      const iterResult = solveIKIterative(targetPos, rawAngles, dhParams);
-      solved = clampToLimits(iterResult, preset.limits);
+      const { angles: iterAngles } = solveIKIterative(targetPos, rawAngles, dhParams);
+      solved = clampToLimits(iterAngles, preset.limits);
     }
 
     // Verify solution quality (FK round-trip check)
@@ -245,6 +208,7 @@ export function SixDOF() {
     setTarget3D(null);
     setSolveStatus('idle');
     setReachable(true);
+    setIkSteps(null);
   }, [animateTo]);
 
   return (
@@ -486,6 +450,7 @@ export function SixDOF() {
           jacobian={jacobian}
           metrics={metrics}
           presetName={preset.name}
+          ikSteps={ikSteps}
         />
       </div>
     </div>

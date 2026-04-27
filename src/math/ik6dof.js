@@ -246,6 +246,100 @@ function extractZYZ(R) {
 }
 
 /**
+ * Solve 6-DOF IK and capture all intermediate computation steps
+ * for educational display.  Same algorithm as solveIK6 but also
+ * returns step-by-step values from the first valid elbow-up solution.
+ *
+ * @param {{ x, y, z }}  position  - Desired TCP position (mm)
+ * @param {number[]}     Rd        - Desired 3×3 rotation (row-major)
+ * @param {object[]}     dhParams  - DH parameter table (6 entries)
+ * @param {object}       config    - { d1, a2, a3, d4, d6 }
+ * @returns {{
+ *   solutions: number[][] | null,
+ *   steps: {
+ *     wristCentre: {x,y,z},
+ *     theta1: number,
+ *     r: number, s: number, r2: number,
+ *     L1: number, L2: number,
+ *     cosT3: number, gamma: number,
+ *     theta2: number, theta3: number,
+ *     R36: number[],
+ *     theta4: number, theta5: number, theta6: number,
+ *   } | null
+ * }}
+ */
+export function solveIK6Steps(position, Rd, dhParams, config) {
+  const { x: px, y: py, z: pz } = position;
+  const { d1, a2, a3, d4, d6 } = config;
+
+  // ── Step 1: Wrist centre ─────────────────────────────────────────────────
+  const nx = Rd[2]; const ny = Rd[5]; const nz = Rd[8];
+  const wcx = px - d6 * nx;
+  const wcy = py - d6 * ny;
+  const wcz = pz - d6 * nz;
+
+  const solutions = [];
+  let steps = null;   // will be populated by first valid elbow-up path
+
+  const t1_candidates = [
+    Math.atan2(wcy, wcx),
+    Math.atan2(-wcy, -wcx),
+  ];
+
+  for (const t1 of t1_candidates) {
+    // ── Step 3 geometry ───────────────────────────────────────────────────
+    const r   = Math.sqrt(wcx * wcx + wcy * wcy);
+    const s   = wcz - d1;
+    const r2  = Math.sqrt(r * r + s * s);
+    const L1  = Math.hypot(a2, 0);
+    const L2  = Math.hypot(a3, d4);
+    const cosT3 = (r2 * r2 - L1 * L1 - L2 * L2) / (2 * L1 * L2);
+    const gamma  = Math.atan2(d4, a3);
+
+    if (Math.abs(cosT3) > 1 + 1e-9) continue;
+    const cosT3c = Math.max(-1, Math.min(1, cosT3));
+
+    for (const sinSign of [1, -1]) {
+      const sinT3   = sinSign * Math.sqrt(1 - cosT3c * cosT3c);
+      const t3_raw  = Math.atan2(sinT3, cosT3c);
+      const t3      = t3_raw - gamma;
+
+      const beta    = Math.atan2(s, r);
+      const alpha_a = Math.atan2(L2 * sinT3, L1 + L2 * cosT3c);
+      const t2      = beta - alpha_a - (PI / 2);
+
+      const T03  = buildT03(t1, t2, t3, dhParams);
+      const R03  = extractR(T03);
+      const R03T = transpose3(R03);
+      const R36  = mulR(R03T, Rd);
+      const wristSols = extractZYZ(R36);
+
+      for (const [t4, t5, t6] of wristSols) {
+        solutions.push([t1, t2, t3, t4, t5, t6]);
+
+        // Capture steps for the very first valid elbow-up (sinSign=+1) path
+        if (steps === null && sinSign === 1) {
+          steps = {
+            wristCentre: { x: wcx, y: wcy, z: wcz },
+            theta1: t1,
+            r, s, r2, L1, L2,
+            cosT3: cosT3c, gamma,
+            theta2: t2, theta3: t3,
+            R36,
+            theta4: t4, theta5: t5, theta6: t6,
+          };
+        }
+      }
+    }
+  }
+
+  return {
+    solutions: solutions.length > 0 ? solutions : null,
+    steps,
+  };
+}
+
+/**
  * Pick the best solution from a set by minimising total joint displacement
  * from the current configuration (joint-space proximity).
  *

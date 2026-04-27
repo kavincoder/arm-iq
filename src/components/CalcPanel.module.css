@@ -199,3 +199,10 @@
 
 .jacTable td:first-child { text-align: left; }
 .jacTable td.zero { color: var(--text-dim); }
+
+/* ── IK Breakdown ── */
+.ikBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
