@@ -217,6 +217,7 @@ export function TwoDOF() {
           target={target}
           angles={animAngles}
           reachable={reachable}
+          elbowUp={mode === 'up'}
         />
       </div>
     </div>

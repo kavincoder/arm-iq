@@ -80,6 +80,11 @@ export function CalcPanel3({ L1 = 90, L2 = 75, L3 = 55, target = { x: 130, y: 70
           <Row lbl="θ₃" val={`φ − θ₁ − θ₂ = ${fmtDeg(phi)} − (${fmtDeg(t1)}) − ${fmtDeg(t2)}`}/>
           <Row lbl="" val={`= ${fmtDeg(t3)}°`}/>
           <div className={styles.divider}/>
+          {!reachable && (
+            <div className={styles.unreachable}>
+              ✕ UNREACHABLE — target outside workspace
+            </div>
+          )}
           <Row lbl="FK CHECK" header/>
           <Row lbl="x_fk" val={fmtMM(fkTip.x)} unit="mm"/>
           <Row lbl="y_fk" val={fmtMM(fkTip.y)} unit="mm"/>

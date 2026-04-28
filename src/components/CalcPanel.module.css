@@ -200,6 +200,19 @@
 .jacTable td:first-child { text-align: left; }
 .jacTable td.zero { color: var(--text-dim); }
 
+/* ── Unreachable notice ── */
+.unreachable {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 3px;
+  padding: 5px 8px;
+  margin: 2px 0;
+}
+
 /* ── IK Breakdown ── */
 .ikBreakdown {
   display: flex;

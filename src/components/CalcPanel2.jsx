@@ -19,7 +19,7 @@ import styles from './CalcPanel.module.css';
 import { fmtMM, fmtDeg, fmtRatio, fmtError } from '../utils/format.js';
 import { solveFK2 } from '../math/ik2dof.js';
 
-export function CalcPanel2({ L1 = 100, L2 = 80, target = { x: 110, y: 60 }, angles = { t1: 0.42, t2: 0.72 }, reachable = true }) {
+export function CalcPanel2({ L1 = 100, L2 = 80, target = { x: 110, y: 60 }, angles = { t1: 0.42, t2: 0.72 }, reachable = true, elbowUp = true }) {
   const { t1, t2 } = angles;
 
   // Derived values for display
@@ -27,7 +27,8 @@ export function CalcPanel2({ L1 = 100, L2 = 80, target = { x: 110, y: 60 }, angl
   const r  = Math.sqrt(r2);
   const cos2 = (r2 - L1 ** 2 - L2 ** 2) / (2 * L1 * L2);
   const cos2c = Math.max(-1, Math.min(1, cos2));
-  const sin2 = Math.sqrt(1 - cos2c ** 2);
+  // sin θ₂ sign matches elbow config: + for elbow-up, − for elbow-down
+  const sin2 = (elbowUp ? 1 : -1) * Math.sqrt(1 - cos2c ** 2);
   const k1 = L1 + L2 * cos2c;
   const k2 = L2 * sin2;
 
@@ -73,7 +74,7 @@ export function CalcPanel2({ L1 = 100, L2 = 80, target = { x: 110, y: 60 }, angl
           <Row lbl="r"     val={fmtMM(r)} unit="mm"/>
           <Row lbl="cos θ₂" val={`(${fmtMM(r2)} − ${L1*L1} − ${L2*L2}) / ${2*L1*L2}`}/>
           <Row lbl=""      val={fmtRatio(cos2c)}/>
-          <Row lbl="sin θ₂" val={`+√(1 − ${fmtRatio(cos2c)}²) = ${fmtRatio(sin2)}`}/>
+          <Row lbl="sin θ₂" val={`${elbowUp ? '+' : '−'}√(1 − ${fmtRatio(cos2c)}²) = ${fmtRatio(sin2)}`}/>
           <Row lbl="θ₂"   val={`atan2(${fmtRatio(sin2)}, ${fmtRatio(cos2c)}) = ${fmtDeg(t2)}°`}/>
           <Row lbl="k₁"   val={fmtMM(k1)} unit="mm" inline>
             <span className={styles.inlineLbl}>k₂</span>
@@ -82,6 +83,11 @@ export function CalcPanel2({ L1 = 100, L2 = 80, target = { x: 110, y: 60 }, angl
           <Row lbl="θ₁" val={`atan2(${fmtMM(target.y)}, ${fmtMM(target.x)}) − atan2(k₂, k₁)`}/>
           <Row lbl=""   val={`= ${fmtDeg(t1)}°`}/>
           <div className={styles.divider}/>
+          {!reachable && (
+            <div className={styles.unreachable}>
+              ✕ UNREACHABLE — target outside workspace
+            </div>
+          )}
           <Row lbl="FK CHECK" header/>
           <Row lbl="x_fk"  val={`L₁·cos θ₁ + L₂·cos(θ₁+θ₂) = ${fmtMM(fk.x)}`}/>
           <Row lbl="y_fk"  val={`L₁·sin θ₁ + L₂·sin(θ₁+θ₂) = ${fmtMM(fk.y)}`}/>
